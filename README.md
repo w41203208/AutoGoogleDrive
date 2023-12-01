@@ -25,3 +25,8 @@
 
 - Upload：Completed
 - Download：UnCompleted
+
+
+### Will Do
+
+- Add download feature

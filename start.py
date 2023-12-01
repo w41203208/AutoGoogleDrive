@@ -1,10 +1,12 @@
 import os
+import json
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 
+SETTINGS_JSON = "settings.json"
 
 # Scopes
 # https://www.googleapis.com/auth/drive	                  See, edit, create, and delete all of your Google Drive files
@@ -22,33 +24,33 @@ UPLOAD_FOLDER_ID = '1NoUtT4OzLTVgrA3inKXgi_Ag7mXyY05X' #1jUJBwKx5fMMuXxxXWiOK6L4
 
 
 def authorization():
-  creds = None
+  credentials = None
   if os.path.exists(TOKEN_AUTH_FILE):
-    creds = Credentials.from_authorized_user_file(TOKEN_AUTH_FILE, scopes=SCOPES)
+    credentials = Credentials.from_authorized_user_file(TOKEN_AUTH_FILE, scopes=SCOPES)
   
-  if creds.expired:
+  if credentials.expired:
     print('憑證已過期')
 
-  if not creds.valid:
+  if not credentials.valid:
     print("憑證無效")
 
 
-  if not creds or not creds.valid:
+  if not credentials or not credentials.valid:
     flow = InstalledAppFlow.from_client_secrets_file(
       CLIENT_SECRET_FILE, scopes=SCOPES
     )
-    creds = flow.run_local_server(port=0)
+    credentials = flow.run_local_server(port=0)
 
   with open(TOKEN_AUTH_FILE, "w") as token:
-      token.write(creds.to_json())
-  return creds
+      token.write(credentials.to_json())
+  return credentials
 
 def create_drive_service():
-  creds = authorization();
+  credentials = authorization();
   # Use service account file
   
   # create drive api client
-  service = build("drive", "v3", credentials=creds)
+  service = build("drive", "v3", credentials=credentials)
   
 
   return service
@@ -94,6 +96,14 @@ def check_authorization(service, file_id):
   print('檔案的權限:', permissions.get('permissions', []))  
 
 if __name__ == "__main__":
-  file_path = "D:\\MingProgram\\unity-learning\\build\\Coin Pusher.zip"
+  global file_path
+  global file_type
 
-  upload_file(file_path, 'zip')
+
+  with open(SETTINGS_JSON, "r") as settings_file:
+    settings = json.load(settings_file)
+    file_path = settings['file_path']
+    file_type = settings['file_type']
+    UPLOAD_FOLDER_ID = settings['destination_dir']
+
+  upload_file(file_path, file_type)
